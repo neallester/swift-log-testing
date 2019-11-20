@@ -25,7 +25,10 @@ final class ExampleTests: XCTestCase {
     }
     
     override func setUp() {
-        TestLogMessages.bootstrap()         // Safe to call bootstrap() multiple times in a single execution
+        TestLogMessages.bootstrap()         // Must be called before logging or obtaining a TestLogMessages.Container
+        
+                                            // It is safe to call bootstrap() multiple times in a single execution
+        
                                             // Do not call LoggingSystem.bootstrap() before or after calling
                                             // TestLogMessages.bootstrap()
     }
@@ -35,6 +38,7 @@ final class ExampleTests: XCTestCase {
         
         let container = TestLogMessages.container(forLabel: StructUnderTest.loggingLabel)
         container.reset()                   // Wipes out any existing messages
+        
                                             // All loggers created with the same label during a single execution
                                             // share the same TestLogMessages.Container. The TestingLogHandler and
                                             // TestLogMessages.Container are thread safe, but tests run in parallel

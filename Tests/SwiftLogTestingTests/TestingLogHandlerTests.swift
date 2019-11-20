@@ -225,17 +225,14 @@ final class TestingLogHandlerTests: XCTestCase {
                 break
             }
             XCTAssertEqual (repetitions * 2, container1.messages.count)
-            XCTAssertEqual (repetitions, container1.messages.map { entry in entry.toString() }.filter { string in string.contains ("L1M1") }.count)
-            XCTAssertEqual (repetitions, container1.messages.map { entry in entry.toString() }.filter { string in string.contains ("L1M2") }.count)
-            XCTAssertEqual (repetitions, container1.messages.map { entry in entry.toString() }.filter { string in string.contains ("KEY") }.count)
+            XCTAssertEqual (repetitions, container1.messages.filter { entry in entry.message.description.contains ("L1M1") }.count)
+            XCTAssertEqual (repetitions, container1.messages.filter { entry in entry.message.description.contains ("L1M2") }.count)
             XCTAssertEqual (repetitions * 2, container2.messages.count)
-            XCTAssertEqual (repetitions, container2.messages.map { entry in entry.toString() }.filter { string in string.contains ("L2M1") }.count)
-            XCTAssertEqual (repetitions, container2.messages.map { entry in entry.toString() }.filter { string in string.contains ("L2M2") }.count)
-            XCTAssertEqual (repetitions, container2.messages.map { entry in entry.toString() }.filter { string in string.contains ("KEY") }.count)
+            XCTAssertEqual (repetitions, container2.messages.filter { entry in entry.message.description.contains ("L2M1") }.count)
+            XCTAssertEqual (repetitions, container2.messages.filter { entry in entry.message.description.contains ("L2M2") }.count)
             XCTAssertEqual (repetitions * 2, container3.messages.count)
-            XCTAssertEqual (repetitions, container3.messages.map { entry in entry.toString() }.filter { string in string.contains ("L3M1") }.count)
-            XCTAssertEqual (repetitions, container3.messages.map { entry in entry.toString() }.filter { string in string.contains ("L3M2") }.count)
-            XCTAssertEqual (repetitions, container3.messages.map { entry in entry.toString() }.filter { string in string.contains ("KEY") }.count)
+            XCTAssertEqual (repetitions, container3.messages.filter { entry in entry.message.description.contains ("L3M1") }.count)
+            XCTAssertEqual (repetitions, container3.messages.filter { entry in entry.message.description.contains ("L3M2") }.count)
         }
     }
 }
