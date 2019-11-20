@@ -1,10 +1,10 @@
-import Dispatch
+import Foundation
 import Logging
 
 struct TestingLogHandler: LogHandler {
     
     init (label: String) {
-        messagesContainer = LogMessages.container (forLabel: label)
+        messagesContainer = TestLogMessages.container (forLabel: label)
     }
     
     func log(
@@ -15,22 +15,33 @@ struct TestingLogHandler: LogHandler {
         function: String,
         line: UInt)
     {
-        var metadataStrings: [String] = []
-        metadataStrings = self.metadata.map { (key, value) in
-            "\(key)=\(value)"
-        }
+        var mergedMetadata = self.metadata
+        var mergeConflict = false
         if let metadata = metadata {
-            metadataStrings.append(contentsOf: metadata.map { (key, value) in
-                "\(key)=\(value)"
+            mergedMetadata.merge(metadata, uniquingKeysWith: {(left, right) in
+                mergeConflict = true
+                return left
             })
         }
-        let metadataString = metadataStrings.sorted().joined(separator: ";")
-        // Sort to ensure order is deterministic
+        var finalMetadata: Logger.Metadata? = nil
+        if mergeConflict {
+            var conflictedKeys: [String] = []
+            if let metadata = metadata {
+                for key in metadata.keys {
+                    if let _ = self.metadata[key] {
+                        conflictedKeys.append(key)
+                    }
+                }
+            }
+            finalMetadata = [ "METADATA_KEY_CONFLICT" : "\(conflictedKeys.sorted().joined(separator: ","))"] // Sort to ensure order is determinisitic
+        } else if !mergedMetadata.isEmpty {
+            finalMetadata = mergedMetadata
+        }
         let newMessage =
             LogMessage (
                 level: level,
                 message: message,
-                metadata: metadataString,
+                metadata: finalMetadata,
                 file: file,
                 function: function,
                 line: line
@@ -49,40 +60,73 @@ struct TestingLogHandler: LogHandler {
     
     var metadata: Logger.Metadata = [:]
     var logLevel: Logger.Level = .info
-    private var messagesContainer: LogMessages.Container
+    private var messagesContainer: TestLogMessages.Container
 }
 
 public struct LogMessage {
     
     let level: Logger.Level
     let message: Logger.Message
-    let metadata: String
+    let metadata: Logger.Metadata?
     let file: String
     let function: String
     let line: UInt
     
-    func toFullString() -> String {
-        var metadataString = ""
-        if !metadata.isEmpty {
-            metadataString = "\(metadata)|"
-        }
-        return "\(level) \(message)|\(metadataString)\(file)|\(function)" // Omit line number since that will produce generally
-                                                                          // spurious false positives
+    public func toString(formatter: (_ level: Logger.Level,
+                                     _ message: Logger.Message,
+                                     _ metadata: Logger.Metadata?,
+                                     _ file: String,
+                                     _ function: String,
+                                     _ line: UInt) -> String = LogMessage.defaultFormat)
+    -> String
+    {
+        formatter (self.level,
+                   self.message,
+                   self.metadata,
+                   self.file,
+                   self.function,
+                   self.line
+        )
     }
     
-    func toString() -> String {
-        var metadataString = ""
-        if !metadata.isEmpty {
-            metadataString = "|\(metadata)"
-        }
-        return "\(level) \(message)\(metadataString)" // Omit line number since that will produce generally
-                                                       // spurious false positives
+    public static func defaultFormat (
+        level: Logger.Level,
+        message: Logger.Message,
+        metadata: Logger.Metadata?,
+        file: String,
+        function: String,
+        line: UInt)
+    -> String
+    {
+        "\(level) \(message)\(metadataAsString(metadata))|\(URL (fileURLWithPath: file).lastPathComponent)|\(function)"
     }
 
+    public static func metadataAsString (_ metadata:
+                                         Logger.Metadata?,
+                                         prefix: String = "|",
+                                         keyValueSeparator: String = "=",
+                                         metadataSeparator: String = ";")
+    -> String
+    {
+        var result = ""
+        if let metadata = metadata, !metadata.isEmpty {
+            result = "\(prefix)\(metadataStrings(separator: keyValueSeparator, metadata: metadata).joined(separator: metadataSeparator))"
+        }
+        return result
+    }
+    
+    public static func metadataStrings (separator: String = "=",
+                                        metadata: Logger.Metadata)
+    -> [String]
+    {
+        metadata.map { (key, value) in
+            "\(key)\(separator)\(value)"
+        }.sorted() // Sort to ensure order is deterministic (default order for Dictionary values varies by platform)
+    }
 }
 
 
-enum LogMessages {
+public enum TestLogMessages {
     
     /**
         Prepare the logging system to record log messages for use in tests.
@@ -123,7 +167,7 @@ enum LogMessages {
     }
 
     
-    class Container {
+    public class Container {
         
         init (label: String) {
             self.label = label
@@ -161,15 +205,11 @@ enum LogMessages {
         }
         
         private var _messages: [LogMessage] = []
-        
         private let queue: DispatchQueue
-        
     }
         
     private static var _containers: [ String : Container ] = [:]
-    
     private static let queue = DispatchQueue(label: "LogMessages")
-    
     private static var isInitialized = false
     
 }
