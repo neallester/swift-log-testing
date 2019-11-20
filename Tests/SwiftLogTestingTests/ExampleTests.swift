@@ -46,7 +46,7 @@ final class ExampleTests: XCTestCase {
         XCTAssertEqual (20, myStruct.myVar)
         XCTAssertEqual (1, container.messages.count)
         XCTAssertEqual ("info StructUnderTest.myVar.didset|newValue=20;oldValue=0|ExampleTests.swift|myVar", container.messages[0].toString())
-                            // Use toString (formatter:) to specify message format
+                                            // Use toString (formatter:) to specify message format
     }
 
 }
