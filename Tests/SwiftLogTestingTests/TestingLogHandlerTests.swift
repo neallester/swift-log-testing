@@ -157,7 +157,21 @@ final class TestingLogHandlerTests: XCTestCase {
         XCTAssertEqual ("info My Message 11|METADATA_KEY_CONFLICT=key1,key4|TestingLogHandlerTests.swift|testLogging()", container.messages[0].toString())
     }
     
+    func testSetLevel() {
+        TestLogMessages.bootstrap()
+        let testingLabel = "github.com/neallester/TestingLogHandlerTests.testSetLevel()"
+        let logger1 = Logger (label: testingLabel)
+        XCTAssertEqual (logger1.logLevel, TestLogMessages.defaultLevel)
+        XCTAssertEqual (TestLogMessages.logLevel (forLabel: testingLabel), TestLogMessages.defaultLevel)
+        TestLogMessages.set(logLevel: .critical, forLabel: testingLabel)
+        XCTAssertEqual (TestLogMessages.logLevel (forLabel: testingLabel), Logger.Level.critical)
+        let logger2 = Logger (label: testingLabel)
+        XCTAssertEqual (logger1.logLevel, TestLogMessages.defaultLevel)
+        XCTAssertEqual (logger2.logLevel, Logger.Level.critical)
+    }
+    
     func testContainerPrint() {
+        TestLogMessages.bootstrap()
         let testingLabel = "github.com/neallester/TestingLogHandlerTests.testContainerPrint()"
         let logger = Logger (label: testingLabel)
         let container = TestLogMessages.container(forLabel: testingLabel)
@@ -170,6 +184,7 @@ final class TestingLogHandlerTests: XCTestCase {
     }
     
     func testMultiThreaded() {
+        TestLogMessages.bootstrap()
         let queue = DispatchQueue (label: "testMultiThreaded", attributes: .concurrent)
         for _ in 0...200 {
             let repetitions = 200
@@ -214,6 +229,7 @@ final class TestingLogHandlerTests: XCTestCase {
             }
             for _ in 1...repetitions {
                 queue.async {
+                    TestLogMessages.set(logLevel: .debug, forLabel: label2)
                     let logger2 = Logger (label: label2)
                     logger2.log(level: .info, "L2M1")
                 }
@@ -221,6 +237,7 @@ final class TestingLogHandlerTests: XCTestCase {
             for _ in 1...repetitions {
                 queue.async {
                     let logger2 = Logger (label: label2)
+                    TestLogMessages.set(logLevel: .info, forLabel: label2)
                     logger2.log(level: .info, "L2M2", metadata: ["L2M2.KEY" : "Value"])
                 }
             }

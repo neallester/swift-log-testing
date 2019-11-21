@@ -52,6 +52,18 @@ final class ExampleTests: XCTestCase {
         XCTAssertEqual ("info StructUnderTest.myVar.didset|newValue=20;oldValue=0|ExampleTests.swift|myVar", container.messages[0].toString())
                                             // Use toString (formatter:) to specify message format
         
+        TestLogMessages.set(logLevel: .critical, forLabel: StructUnderTest.loggingLabel)
+                                            // Use set (logLevel:, forLabel:) to set the level for newly created loggers
+                                            // Messages with priority below logLevel: are not placed in the TestLogMessages.Container
+                                            // Does not affect behavior of existing loggers.
+        
+        container.reset()
+        myStruct.myVar = 40
+        XCTAssertEqual (40, myStruct.myVar)
+        XCTAssertEqual (0, container.messages.count)
+                                            // Message was filtered because each invocation of StructUnderTest.myVar.didSet creates a
+                                            // new logger so the new logger picked up the .critical logLevel set previously
+        
         container.reset()
         container.print()                   // prints all log messages to the console
                                             // use formatter: argument if custom format is required

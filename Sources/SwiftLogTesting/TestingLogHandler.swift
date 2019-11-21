@@ -4,7 +4,9 @@ import Logging
 struct TestingLogHandler: LogHandler {
 
     init (label: String) {
-        messagesContainer = TestLogMessages.container(forLabel: label)
+        let internals = TestLogMessages.newHandlerInternals(forLabel: label)
+        self.messagesContainer = internals.container
+        self.logLevel = internals.logLevel
     }
 
     func log(
@@ -148,16 +150,67 @@ public enum TestLogMessages {
     public static func container (forLabel: String) -> Container {
         var result: Container?
         queue.sync {
-            if let container = _containers[forLabel] {
-                result = container
-            } else {
-                let newContainer = Container(label: forLabel)
-                _containers[forLabel] = newContainer
-                result = newContainer
-            }
+            result = _container(forLabel: forLabel)
         }
         return result!
     }
+    
+    static func newHandlerInternals (forLabel: String) -> (container: Container, logLevel: Logger.Level) {
+        var container: Container?
+        var logLevel: Logger.Level?
+        queue.sync {
+            container = _container(forLabel: forLabel)
+            logLevel = _logLevels[forLabel] ?? TestLogMessages.defaultLevel
+        }
+        return (container: container!, logLevel: logLevel!)
+    }
+    
+    // Not thread safe, must be called on queue
+    private static func _container (forLabel: String) -> Container {
+        if let container = _containers[forLabel] {
+            return container
+        } else {
+            let newContainer = Container(label: forLabel)
+            _containers[forLabel] = newContainer
+            return newContainer
+        }
+    }
+    
+    
+    /**
+            Sets the Logger.Level for any newly created Logger instances for the given label. Does not affect the behavior
+            of existing loggers.
+
+        - parameter logLevel: The Logger.Level to apply to newly created loggers (messages with priority
+                              below this level will not added to the message container).
+
+        - parameter forLabel: The label for which LogLevel should be set.
+     
+    */
+    public static func set (logLevel: Logger.Level, forLabel: String) {
+        queue.async {
+            _logLevels[forLabel] = logLevel
+        }
+    }
+    
+    /**
+        - parameter forLabel: The label for which Logger.Level is requested
+     
+        - returns: The Logger.Level to apply to newly created loggers associated with **forLabel** (messages with priority
+                   below this level will not added to the message container).
+    */
+    public static func logLevel (forLabel: String) -> Logger.Level {
+        var result = TestLogMessages.defaultLevel
+        queue.sync {
+            if let level = _logLevels[forLabel] {
+                result = level
+            }
+        }
+        return result
+
+    }
+    
+    public static let defaultLevel = Logger.Level.info
 
     public class Container {
 
@@ -221,6 +274,7 @@ public enum TestLogMessages {
     }
 
     private static var _containers: [ String: Container ] = [:]
+    private static var _logLevels: [ String : Logger.Level] = [:]
     private static let queue = DispatchQueue(label: "LogMessages")
     private static var isInitialized = false
 
