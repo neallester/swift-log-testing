@@ -7,14 +7,30 @@ import Logging
 final class TestingLogHandlerTests: XCTestCase {
 
     func testLogMessageToString() {
+        
+        func customFormatter (level: Logger.Level,
+                              message: Logger.Message,
+                              metadata: Logger.Metadata?,
+                              file: String,
+                              function: String,
+                              line: UInt)
+        -> String
+        {
+            "\(message)"
+        }
+        
         var message = LogMessage(level: .info, message: "Message1", metadata: nil, file: "/directory/subdirectory/file.swift", function: "function()", line: 20)
         XCTAssertEqual ("info Message1|file.swift|function()", message.toString())
+        XCTAssertEqual ("Message1", message.toString(formatter: customFormatter))
         message = LogMessage(level: .info, message: "Message1", metadata: ["key1" : "value1"], file: "/directory/subdirectory/file.swift", function: "function()", line: 20)
         XCTAssertEqual ("info Message1|key1=value1|file.swift|function()", message.toString())
+        XCTAssertEqual ("Message1", message.toString(formatter: customFormatter))
         message = LogMessage(level: .info, message: "Message1", metadata: nil, file: "/directory/subdirectory/file.swift", function: "function()", line: 20)
         XCTAssertEqual ("info Message1|file.swift|function()", message.toString())
+        XCTAssertEqual ("Message1", message.toString(formatter: customFormatter))
         message = LogMessage(level: .info, message: "Message1", metadata: ["key1" : "value1"], file: "/directory/subdirectory/file.swift", function: "function()", line: 20)
         XCTAssertEqual ("info Message1|key1=value1|file.swift|function()", message.toString())
+        XCTAssertEqual ("Message1", message.toString(formatter: customFormatter))
     }
     
     func testLogMessagedefaultFormat() {
