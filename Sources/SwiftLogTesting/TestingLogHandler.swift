@@ -189,6 +189,26 @@ public enum TestLogMessages {
                 self._messages = []
             }
         }
+        
+        /**
+            print all log entries to console
+         
+            - parameter formatter: enables customization of output format
+         */
+        public func print (formatter: (_ level: Logger.Level,
+                                       _ message: Logger.Message,
+                                       _ metadata: Logger.Metadata?,
+                                       _ file: String,
+                                       _ function: String,
+                                       _ line: UInt)
+                           -> String = LogMessage.defaultFormat)
+        {
+            queue.sync {
+                for entry in _messages {
+                    Swift.print (entry.toString(formatter: formatter))
+                }
+            }
+        }
 
         internal func append (_ newMessage: LogMessage) {
             queue.sync {

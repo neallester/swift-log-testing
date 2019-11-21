@@ -6,19 +6,19 @@ import Logging
 
 final class TestingLogHandlerTests: XCTestCase {
 
+    func customFormatter (level: Logger.Level,
+                          message: Logger.Message,
+                          metadata: Logger.Metadata?,
+                          file: String,
+                          function: String,
+                          line: UInt)
+    -> String
+    {
+        "\(message)"
+    }
+
     func testLogMessageToString() {
-        
-        func customFormatter (level: Logger.Level,
-                              message: Logger.Message,
-                              metadata: Logger.Metadata?,
-                              file: String,
-                              function: String,
-                              line: UInt)
-        -> String
-        {
-            "\(message)"
-        }
-        
+                
         var message = LogMessage(level: .info, message: "Message1", metadata: nil, file: "/directory/subdirectory/file.swift", function: "function()", line: 20)
         XCTAssertEqual ("info Message1|file.swift|function()", message.toString())
         XCTAssertEqual ("Message1", message.toString(formatter: customFormatter))
@@ -155,6 +155,18 @@ final class TestingLogHandlerTests: XCTestCase {
         logger[metadataKey: "key4"] = "value4"
         logger.log(level: .info, "My Message 11", metadata: ["key1" : "value1", "key2" : "value2", "key4" : "value4" ])
         XCTAssertEqual ("info My Message 11|METADATA_KEY_CONFLICT=key1,key4|TestingLogHandlerTests.swift|testLogging()", container.messages[0].toString())
+    }
+    
+    func testContainerPrint() {
+        let testingLabel = "github.com/neallester/TestingLogHandlerTests.testContainerPrint()"
+        let logger = Logger (label: testingLabel)
+        let container = TestLogMessages.container(forLabel: testingLabel)
+        container.reset()
+        logger.log(level: .info, "My Message 3", metadata: ["key1" : "value1"])
+        logger.log(level: .info, "My Message 4", metadata: ["key1" : "value1", "key2" : "value2"])
+        print ("Four lines of output should follow:")
+        container.print()
+        container.print (formatter: customFormatter)
     }
     
     func testMultiThreaded() {
