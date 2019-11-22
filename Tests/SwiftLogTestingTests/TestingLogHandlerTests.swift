@@ -211,12 +211,12 @@ final class TestingLogHandlerTests: XCTestCase {
             }
             let logger1 = Logger (label: label1)
             for _ in 1...repetitions {
-                queue.async {
+                queue.async(group: group) {
                     logger1.log(level: .info, "L1M1")
                 }
             }
             for _ in 1...repetitions {
-                queue.async {
+                queue.async(group: group) {
                     logger1.log(level: .info, "L1M2", metadata: ["L1M2.KEY" : "Value"])
                 }
             }
@@ -228,14 +228,14 @@ final class TestingLogHandlerTests: XCTestCase {
                 }
             }
             for _ in 1...repetitions {
-                queue.async {
+                queue.async(group: group) {
                     TestLogMessages.set(logLevel: .debug, forLabel: label2)
                     let logger2 = Logger (label: label2)
                     logger2.log(level: .info, "L2M1")
                 }
             }
             for _ in 1...repetitions {
-                queue.async {
+                queue.async(group: group) {
                     let logger2 = Logger (label: label2)
                     TestLogMessages.set(logLevel: .info, forLabel: label2)
                     logger2.log(level: .info, "L2M2", metadata: ["L2M2.KEY" : "Value"])
@@ -249,7 +249,7 @@ final class TestingLogHandlerTests: XCTestCase {
                 }
             }
             for _ in 1...repetitions {
-                queue.async {
+                queue.async(group: group) {
                     TestLogMessages.bootstrap()
                     let logger3 = Logger (label: label3)
                     logger3.log(level: .info, "L3M1")
